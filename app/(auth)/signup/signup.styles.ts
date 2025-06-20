@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   //   },
   primaryButton: {
     height: 48,
-    backgroundColor: "#2e86de",
+    backgroundColor: "#0f766e",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
@@ -54,11 +54,11 @@ const styles = StyleSheet.create({
   link: {
     alignSelf: "flex-end",
     marginBottom: 32,
-    color: "#2e86de",
+    color: "#0f766e",
     fontSize: 14,
   },
   linkText: {
-    color: "#2e86de",
+    color: "#0f766e",
     fontSize: 14,
   },
   dividerContainer: {
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   footerLink: {
-    color: "#2e86de",
+    color: "#0f766e",
     fontWeight: "600",
   },
 
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
 
   termLink: {
-    color: COLORS.surface,
+    color: "#0f766e",
     fontWeight: "500",
   },
 

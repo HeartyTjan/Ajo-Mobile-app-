@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   saveButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#0f766e",
     borderRadius: 8,
     padding: 15,
     alignItems: "center",
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   changePicText: {
-    color: "#3b82f6",
+    color: "#0f766e",
     fontSize: 14,
     fontWeight: "500",
   },

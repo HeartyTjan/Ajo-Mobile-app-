@@ -15,16 +15,34 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 16,
   },
-  input: {
+  inputsearch: {
     flex: 1,
     borderWidth: 1,
     borderColor: "#d1d5db",
     borderRadius: 8,
     paddingHorizontal: 12,
     backgroundColor: "#fff",
+    height: 48,
+    fontSize: 16,
+    color: "#000",
   },
+
+  input: {
+    height: 48,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    fontSize: 16,
+    color: "#000", // text color
+  },
+  //   input: {
+  //   borderColor: "#ccc",
+  //   borderWidth: 1,
+  //   borderRadius: 8,
+  // },
   createButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#0f766e",
     paddingHorizontal: 16,
     justifyContent: "center",
     borderRadius: 8,
@@ -47,10 +65,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 2,
   },
-  label: {
-    color: "#6b7280",
-    fontSize: 12,
-  },
+  // label: {
+  //   color: "#6b7280",
+  //   fontSize: 12,
+  // },
   value: {
     fontSize: 20,
     fontWeight: "bold",
@@ -120,6 +138,27 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 12,
     color: "#374151",
+  },
+
+  joinBox: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: "#374151",
+  },
+  joinButton: {
+    marginTop: 10,
+    backgroundColor: "#10b981",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  joinButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

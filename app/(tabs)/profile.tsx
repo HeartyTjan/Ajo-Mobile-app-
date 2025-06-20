@@ -1,21 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
   ActivityIndicator,
   TouchableOpacity,
   ScrollView,
+  Alert,
+  Image,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons, Entypo } from "@expo/vector-icons";
-// import { useNavigation } from "@react-navigation/native";
-import { Alert } from "react-native";
+import { saveToStorage, getFromStorage } from "../components/storage";
+import { useFocusEffect, useRouter } from "expo-router";
+import { jwtDecode } from "jwt-decode";
 
 import styles from "../styles/profile.styles";
-import { saveToStorage, getFromStorage } from "../components/storage";
-import { useRouter } from "expo-router";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "http://172.16.0.176:8080";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
@@ -23,47 +23,88 @@ export default function UserProfile() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchData = async () => {
-    try {
-      const token = await getFromStorage("token");
-      const storedUser = await getFromStorage("user");
+  useFocusEffect(
+    useCallback(() => {
+      const loadData = async () => {
+        setLoading(true);
 
-      setUser(storedUser);
+        try {
+          const token = await getFromStorage("token");
+          const decoded = jwtDecode(token);
 
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+          if (!decoded?.user_id) {
+            console.log("Invalid or missing user ID");
+            return;
+          }
+
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          };
+
+          // Always fetch user
+          const userRes = await fetch(`${API_BASE}/users/${decoded.user_id}`, {
+            headers,
+          });
+
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            setUser(userData);
+            await saveToStorage("user", userData);
+          }
+
+          // Try to load profile from storage
+          let storedProfile = await getFromStorage("user_profile");
+
+          try {
+            if (typeof storedProfile === "string") {
+              storedProfile = JSON.parse(storedProfile);
+            }
+          } catch (e) {
+            storedProfile = null;
+          }
+
+          const isValidProfile =
+            storedProfile &&
+            typeof storedProfile === "object" &&
+            Object.keys(storedProfile).length > 0;
+
+          if (isValidProfile) {
+            // console.log("Using stored profile", storedProfile);
+            console.log("Profile data", storedProfile.profile_pic);
+
+            setProfile(storedProfile);
+          } else {
+            console.log("No valid profile in storage, fetching...");
+            const profileRes = await fetch(
+              `${API_BASE}/profile/${decoded.user_id}`,
+              { headers }
+            );
+
+            if (profileRes.ok) {
+              const profileData = await profileRes.json();
+              console.log("Profile data", profileData.profile_pic);
+
+              setProfile(profileData);
+              await saveToStorage("user_profile", profileData);
+            } else {
+              console.log("Failed to fetch profile:", profileRes.status);
+            }
+          }
+        } catch (err) {
+          console.log("Profile Fetch Error:", err);
+        } finally {
+          setLoading(false);
+        }
       };
 
-      const response = await fetch(`${API_BASE}/profile/${storedUser?.id}`, {
-        headers,
-      });
-      const profileData = await response.json();
-      setProfile(profileData);
-      await saveToStorage("user_profile", profileData);
-    } catch (error) {
-      console.log("Fetch error", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // const handleSignOut = async () => {
-  //   await saveToStorage("token", null);
-  //   await saveToStorage("user", null);
-  //   navigation.reset({ index: 0, routes: [{ name: "Login" }] });
-  // };
-
-  // useEffect(() => {
-  //   fetchData();
-  // }, []);
+      loadData();
+    }, [])
+  );
 
   const handleSignOut = () => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
+      { text: "Cancel", style: "cancel" },
       {
         text: "Log Out",
         style: "destructive",
@@ -71,25 +112,31 @@ export default function UserProfile() {
           setLoading(true);
           await saveToStorage("token", null);
           await saveToStorage("user", null);
+          await saveToStorage("user_profile", null);
           router.replace("/(auth)/login/login");
         },
       },
     ]);
   };
-  // if (loading) return <ActivityIndicator style={{ marginTop: 50 }} />;
+
+  if (loading) {
+    return <ActivityIndicator style={{ marginTop: 50 }} />;
+  }
 
   return (
     <View style={styles.scrollContainer}>
-      <LinearGradient
-        colors={["#3b82f6", "#8b5cf6"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
+      <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.username?.charAt(0).toUpperCase() || "J"}
-          </Text>
+          {profile?.profile_pic?.startsWith("file://") ? (
+            <Image
+              source={{ uri: profile.profile_pic }}
+              style={{ width: 150, height: 110, borderRadius: 50 }}
+            />
+          ) : (
+            <Text style={styles.avatarText}>
+              {user?.username?.charAt(0).toUpperCase() || "J"}
+            </Text>
+          )}
         </View>
         <Text style={styles.username}>{user?.username || "John Doe"}</Text>
         <View style={styles.verified}>
@@ -97,10 +144,10 @@ export default function UserProfile() {
             {user?.verified ? "Verified" : "Unverified"}
           </Text>
         </View>
-      </LinearGradient>
+      </View>
 
       <ScrollView
-        showsVerticalScrollIndicator={true}
+        showsVerticalScrollIndicator
         contentContainerStyle={{ paddingBottom: 50 }}
       >
         <View style={styles.cardContainer}>
@@ -116,10 +163,7 @@ export default function UserProfile() {
 
         <View style={styles.aboutSection}>
           <Text style={styles.aboutTitle}>About</Text>
-          <Text style={styles.aboutText}>
-            {profile?.bio ||
-              "Passionate about group savings and financial literacy. Love helping others achieve their financial goals!"}
-          </Text>
+          <Text style={styles.aboutText}>{profile?.bio || ""}</Text>
 
           <View style={styles.infoRow}>
             <MaterialIcons name="email" size={20} color="gray" />
@@ -147,7 +191,7 @@ export default function UserProfile() {
             onPress={() => router.push("../components/editProfile")}
           >
             <View style={styles.menuIcon}>
-              <MaterialIcons name="edit" size={24} color="#3b82f6" />
+              <MaterialIcons name="edit" size={24} color="#0f766e" />
             </View>
             <Text style={styles.menuText}>Edit Profile</Text>
             <Entypo name="chevron-right" size={20} color="#9ca3af" />
@@ -160,7 +204,7 @@ export default function UserProfile() {
             onPress={() => router.push("../components/settings")}
           >
             <View style={styles.menuIcon}>
-              <MaterialIcons name="settings" size={24} color="#3b82f6" />
+              <MaterialIcons name="settings" size={24} color="#0f766e" />
             </View>
             <Text style={styles.menuText}>Settings</Text>
             <Entypo name="chevron-right" size={20} color="#9ca3af" />
@@ -168,12 +212,9 @@ export default function UserProfile() {
 
           <View style={styles.divider} />
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate("Support")}
-          >
+          <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuIcon}>
-              <MaterialIcons name="help-outline" size={24} color="#3b82f6" />
+              <MaterialIcons name="help-outline" size={24} color="#0f766e" />
             </View>
             <Text style={styles.menuText}>Help & Support</Text>
             <Entypo name="chevron-right" size={20} color="#9ca3af" />

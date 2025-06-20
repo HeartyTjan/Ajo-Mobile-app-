@@ -4,72 +4,103 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useState, useEffect, useMemo } from "react";
-// import ScreenWrapper from "@/components/screenWrapper";
-// import { MaterialIcons } from "@expo/vector-icons";
 import GroupCard from "@/app/components/groupCard";
 import styles from "../styles/groups.styles";
 import { useRouter } from "expo-router";
+import axios from "axios";
+import { getFromStorage } from "../components/storage";
+import { jwtDecode } from "jwt-decode";
 
-const mockBackendData = async () => {
-  return {
-    totalSaved: 23000,
-    groups: [
-      {
-        id: 1,
-        title: "Family Vacation Fund",
-        description: "Saving for our annual family trip to Hawaii",
-        saved: 8500,
-        goal: 15000,
-        members: 6,
-        dueDate: "Jun 15",
-        status: "Active",
-      },
-      {
-        id: 2,
-        title: "Wedding Savings",
-        description: "Contribution towards Sarah’s wedding",
-        saved: 7000,
-        goal: 10000,
-        members: 5,
-        dueDate: "Aug 30",
-        status: "Active",
-      },
-      {
-        id: 3,
-        title: "Project X Fund",
-        description: "Funding side project with team",
-        saved: 7500,
-        goal: 12000,
-        members: 4,
-        dueDate: "Jul 10",
-        status: "Active",
-      },
-    ],
-  };
-};
+const API_BASE = "http://172.16.0.176:8080";
 
 export default function MyGroupsScreen() {
   const router = useRouter();
   const [groups, setGroups] = useState([]);
-  const [totalSaved, setTotalSaved] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+
+  const loadGroups = async () => {
+    try {
+      const token = await getFromStorage("token");
+      const decoded = jwtDecode(token);
+
+      if (!decoded?.user_id) {
+        console.log("Invalid or missing user ID");
+        return;
+      }
+
+      if (!token) return;
+
+      const res = await axios.get(
+        `${API_BASE}/contributions/groups/${decoded.user_id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setGroups(res.data);
+    } catch (error) {
+      console.error("Failed to fetch contributions:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const data = await mockBackendData();
-      setGroups(data?.groups);
-      setTotalSaved(data.totalSaved);
-    };
-    fetchData();
+    loadGroups();
   }, []);
 
   const filteredGroups = useMemo(() => {
     return groups.filter((group) =>
-      group.title.toLowerCase().includes(searchQuery.toLowerCase())
+      group.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [groups, searchQuery]);
+
+  const handleJoinGroup = async () => {
+    if (!inviteLink.trim()) {
+      Alert.alert("Error", "Please enter a valid invite link");
+      return;
+    }
+
+    const inviteCode = inviteLink.split("/").pop();
+    if (!inviteCode) {
+      Alert.alert("Error", "Invalid link format");
+      return;
+    }
+
+    try {
+      const token = await getFromStorage("token");
+      if (!token) {
+        Alert.alert("Error", "User not authenticated");
+        return;
+      }
+
+      await axios.post(
+        `${API_BASE}/contributions/join`,
+        {
+          invite_code: inviteCode,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      Alert.alert("Success", "You have joined the Ajo group");
+      loadGroups();
+      setInviteLink("");
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || "Failed to join group"
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -78,7 +109,7 @@ export default function MyGroupsScreen() {
       <View style={styles.searchRow}>
         <TextInput
           placeholder="Search groups..."
-          style={styles.input}
+          style={styles.inputsearch}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -91,23 +122,36 @@ export default function MyGroupsScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.summaryBox}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.label}>Active Groups</Text>
-          <Text style={styles.value}>{groups.length}</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.label}>Total Saved</Text>
-          <Text style={[styles.value, { color: "#22c55e" }]}>
-            ${totalSaved.toLocaleString()}
-          </Text>
-        </View>
+      <View style={styles.joinBox}>
+        <Text style={styles.label}>Join a Group</Text>
+        <TextInput
+          placeholder="Paste invite link here"
+          placeholderTextColor="#999"
+          style={styles.input}
+          value={inviteLink}
+          onChangeText={setInviteLink}
+        />
+        <TouchableOpacity style={styles.joinButton} onPress={handleJoinGroup}>
+          <Text style={styles.joinButtonText}>Join Group</Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
         data={filteredGroups}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <GroupCard group={item} />}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "../components/groupDashboard",
+                params: { group: JSON.stringify(item) },
+              })
+            }
+          >
+            <GroupCard group={item} />
+          </TouchableOpacity>
+        )}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
       />
     </View>

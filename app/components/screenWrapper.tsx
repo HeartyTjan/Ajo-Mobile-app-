@@ -1,14 +1,31 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { jwtDecode } from "jwt-decode";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { getFromStorage } from "./storage";
 
 export default function ScreenWrapper({ children }) {
+  const [username, setUsername] = useState("");
+
+  const loadUser = async () => {
+    const token = await getFromStorage("token");
+    const decoded = jwtDecode(token);
+    setUsername(decoded?.username);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUser();
+    }, []) // Add dependencies here
+  );
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Ionicons name="menu" size={28} />
 
         <View style={styles.welcomeSection}>
-          <Text style={styles.greeting}>Hi, Sarah! 👋</Text>
+          <Text style={styles.greeting}>Hi {username}👋</Text>
           <Text style={styles.subtitle}>Welcome back</Text>
         </View>
 

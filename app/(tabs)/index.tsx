@@ -1,9 +1,12 @@
 import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import styles from "../styles/dashboard.styles";
 import ScreenWrapper from "@/app/components/screenWrapper";
+import { useRouter } from "expo-router";
 const DashboardScreen = () => {
+  const router = useRouter();
+
   return (
     <ScreenWrapper>
       <ScrollView
@@ -70,13 +73,20 @@ const DashboardScreen = () => {
             <Text style={styles.actionSubtitle}>Transfer funds</Text>
           </View>
 
-          <View style={[styles.actionCard, { backgroundColor: "#fdf4ff" }]}>
-            <View style={[styles.iconWrapper, { backgroundColor: "#d946ef" }]}>
-              <Ionicons name="people" size={24} color="#fff" />
+          <TouchableOpacity
+            onPress={() => router.push("../components/createAjoGroup")}
+            style={[styles.actionCard, { backgroundColor: "#fdf4ff" }]}
+          >
+            <View>
+              <View
+                style={[styles.iconWrapper, { backgroundColor: "#d946ef" }]}
+              >
+                <Ionicons name="people" size={24} color="#fff" />
+              </View>
+              <Text style={styles.actionTitle}>New Group</Text>
+              <Text style={styles.actionSubtitle}>Create group</Text>
             </View>
-            <Text style={styles.actionTitle}>New Group</Text>
-            <Text style={styles.actionSubtitle}>Create group</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={[styles.actionCard, { backgroundColor: "#fff7ed" }]}>
             <View style={[styles.iconWrapper, { backgroundColor: "#f97316" }]}>
@@ -96,7 +106,7 @@ const DashboardScreen = () => {
             <Text style={styles.activityTitle}>Family Vacation Fund</Text>
             <Text style={styles.activitySubtitle}>2 hours ago</Text>
           </View>
-          <Text style={[styles.amount, { color: "#047857" }]}>+$50</Text>
+          <Text style={[styles.amount, { color: "#047857" }]}>+₦50</Text>
         </View>
 
         <View style={styles.activityCard}>
@@ -108,7 +118,7 @@ const DashboardScreen = () => {
             <Text style={styles.activityTitle}>Weekend Trip Payment</Text>
             <Text style={styles.activitySubtitle}>1 day ago</Text>
           </View>
-          <Text style={[styles.amount, { color: "#dc2626" }]}>-$120</Text>
+          <Text style={[styles.amount, { color: "#dc2626" }]}>-₦120</Text>
         </View>
 
         <View style={styles.activityCard}>
@@ -130,7 +140,7 @@ const DashboardScreen = () => {
             <Text style={styles.activityTitle}>Office Party Fund</Text>
             <Text style={styles.activitySubtitle}>3 days ago</Text>
           </View>
-          <Text style={[styles.amount, { color: "#047857" }]}>+$25</Text>
+          <Text style={[styles.amount, { color: "#047857" }]}>+₦25</Text>
         </View>
       </ScrollView>
     </ScreenWrapper>

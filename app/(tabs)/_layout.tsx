@@ -36,22 +36,24 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="activities"
         options={{
           tabBarIcon: ({ size, color }) => (
             <Ionicons name="trending-up-outline" size={size} color={color} />
           ),
         }}
-      />
-      {/* <Tabs.Screen
-        name="notifications"
+      /> */}
+
+      <Tabs.Screen
+        name="wallet"
         options={{
           tabBarIcon: ({ size, color }) => (
-            <Ionicons name="notifications" size={size} color={color} />
+            <Ionicons name="wallet" size={size} color={color} />
           ),
         }}
-      /> */}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{

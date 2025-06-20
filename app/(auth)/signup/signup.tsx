@@ -2,9 +2,13 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { COLORS } from "../../../constants/theme";
 import styles from "./signup.styles";
-import { Link } from "expo-router";
-import validateForm from "@/app/components/validateForm"; // Assume it handles empty or format errors
+import { Link, useRouter } from "expo-router";
+import validateForm from "@/app/components/validateForm";
 import { Feather } from "@expo/vector-icons";
+import { Platform } from "react-native";
+
+const API_BASE =
+  Platform.OS === "web" ? "http://localhost:8080" : "http://172.16.0.176:8080";
 
 export default function Signup() {
   const [agreed, setAgreed] = useState(false);
@@ -14,11 +18,13 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [bvn, setBvn] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const router = useRouter();
 
   const handleSignup = async () => {
-    const userInfo = { userName, email, phone, password };
+    const userInfo = { userName, email, phone, password, bvn };
 
     const validationErrors = validateForm(userInfo);
 
@@ -34,7 +40,7 @@ export default function Signup() {
     setErrors({});
 
     try {
-      const response = await fetch("http://localhost:8080/register", {
+      const response = await fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,9 +48,11 @@ export default function Signup() {
         body: JSON.stringify(userInfo),
       });
 
+      console.log("status", response.status);
       if (response.status === 201) {
         const data = await response.json();
         alert(data.message || "Signup successful");
+        router.replace("/(auth)/login/login");
       } else {
         const error = await response.json();
         alert("Signup failed: " + (error?.error || "Unknown error"));
@@ -103,7 +111,19 @@ export default function Signup() {
           value={phone}
           onChangeText={(text) => [setErrors({}), setPhone(text)]}
         />
+
         {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+
+        <TextInput
+          placeholder="BVN"
+          placeholderTextColor="#888"
+          keyboardType="phone-pad"
+          style={styles.input}
+          value={bvn}
+          onChangeText={(text) => [setErrors({}), setBvn(text)]}
+        />
+        {errors.bvn && <Text style={styles.errorText}>{errors.bvn}</Text>}
+
         <View style={styles.inputWrapper}>
           <TextInput
             placeholder="Password"

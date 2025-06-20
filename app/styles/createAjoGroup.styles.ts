@@ -25,11 +25,11 @@ export default StyleSheet.create({
     padding: 10,
   },
   uploadBtn: {
-    color: "#1e90ff",
+    color: "#0f766e",
     fontWeight: "600",
   },
   submitButton: {
-    backgroundColor: "#1e90ff",
+    backgroundColor: "#0f766e",
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
@@ -37,5 +37,14 @@ export default StyleSheet.create({
   submitButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  inputDropDown: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: "#fff",
+    marginTop: 6,
   },
 });

@@ -1,12 +1,20 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Platform,
+} from "react-native";
 import { COLORS } from "../../../constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import styles from "./auth.styles";
 import * as WebBrowser from "expo-web-browser";
 import validateForm from "@/app/components/validateForm";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getFromStorage, saveToStorage } from "@/app/components/storage";
 
 // import * as Google from "expo-auth-session/providers/google";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -14,7 +22,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 WebBrowser.maybeCompleteAuthSession();
 
+const API_BASE =
+  Platform.OS === "web" ? "http://localhost:8080" : "http://172.16.0.176:8080";
 export default function Login() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
@@ -23,7 +35,19 @@ export default function Login() {
   const handleLogin = async () => {
     const userInfo = { email, password };
 
-    const validationErrors = validateForm(userInfo);
+    const validationErrors = {}; // <- Declare this
+
+    const emailPattern = /\S+@\S+\.\S+/;
+
+    if (!email) {
+      validationErrors.email = "Email is required";
+    } else if (!emailPattern.test(email)) {
+      validationErrors.email = "Email is invalid";
+    }
+
+    if (!password) {
+      validationErrors.password = "Password is required";
+    }
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -33,7 +57,7 @@ export default function Login() {
     setErrors({});
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/login", {
+      const response = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userInfo),
@@ -41,9 +65,10 @@ export default function Login() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        await AsyncStorage.setItem("token", data.token);
+      if (response.status === 200) {
+        await saveToStorage("token", data.token);
         alert("Login successful");
+        router.replace("/(tabs)");
       } else {
         alert(data.error || "Login failed");
       }

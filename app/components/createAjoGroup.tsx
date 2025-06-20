@@ -6,76 +6,84 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Image,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
-import styles from "../styles/createAjoGroup.styles"; // create styles as needed
-import { Stack } from "expo-router";
+import styles from "../styles/createAjoGroup.styles";
+import { Stack, useRouter } from "expo-router";
+import { useGroup } from "./groupProvider";
+import { getFromStorage, saveToStorage } from "../components/storage";
+import RNPickerSelect from "react-native-picker-select";
+
+const API_BASE = "http://172.16.0.176:8080";
+
 export default function CreateAjoGroup() {
+  const router = useRouter();
+  const { loadGroups } = useGroup();
+
   const [group, setGroup] = useState({
     name: "",
     description: "",
     amount: "",
-    frequency: "",
-    startDate: "",
-    members: "",
-    image: "",
+    cycle: "",
+    type: "",
   });
 
   const [loading, setLoading] = useState(false);
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      setGroup((prev) => ({ ...prev, image: uri }));
-    }
-  };
-
   const handleSubmit = async () => {
-    const { name, description, amount, frequency, startDate, members } = group;
+    const { name, description, amount, cycle } = group;
+    console.log(name, description, amount, cycle);
 
-    if (
-      !name ||
-      !description ||
-      !amount ||
-      !frequency ||
-      !startDate ||
-      !members
-    ) {
-      Alert.alert("Error", "All fields except image are required");
+    if (!name || !description || !amount || !cycle) {
+      Alert.alert("Error", "All fields are required");
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8080/ajo/create", {
+      const token = await getFromStorage("token");
+
+      if (!token) {
+        Alert.alert("Error", "User not authenticated");
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
         name,
         description,
         amount: parseFloat(amount),
-        frequency,
-        startDate,
-        members: parseInt(members),
-        image: group.image,
-      });
+        cycle,
+        type: group.type,
+      };
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      };
+
+      const response = await axios.post(
+        `${API_BASE}/contributions`,
+        payload,
+        config
+      );
 
       Alert.alert("Success", "Ajo Group Created");
+
+      const newGroup = response.data;
+
       setGroup({
         name: "",
         description: "",
         amount: "",
-        frequency: "",
-        startDate: "",
-        members: "",
-        image: "",
+        cycle: "",
+        type: "",
       });
+
+      router.replace("/(tabs)/groups");
     } catch (err) {
       console.error(err.response?.data || err.message);
       Alert.alert("Error", "Failed to create Ajo group");
@@ -92,6 +100,7 @@ export default function CreateAjoGroup() {
       <Stack.Screen
         options={{ title: "Create Ajo Group", headerShown: true }}
       />
+
       <View style={styles.field}>
         <Text style={styles.label}>Group Name</Text>
         <TextInput
@@ -112,7 +121,7 @@ export default function CreateAjoGroup() {
       </View>
 
       <View style={styles.field}>
-        <Text style={styles.label}>Contribution Amount</Text>
+        <Text style={styles.label}>Amount</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
@@ -122,45 +131,38 @@ export default function CreateAjoGroup() {
       </View>
 
       <View style={styles.field}>
-        <Text style={styles.label}>Contribution Frequency</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., weekly, monthly"
-          value={group.frequency}
-          onChangeText={(text) => setGroup({ ...group, frequency: text })}
+        <Text style={styles.label}>Cycle</Text>
+        <RNPickerSelect
+          onValueChange={(value) => setGroup({ ...group, cycle: value })}
+          placeholder={{ label: "Select cycle", value: null }}
+          items={[
+            { label: "Weekly", value: "weekly" },
+            { label: "Monthly", value: "monthly" },
+            { label: "Daily", value: "daily" },
+          ]}
+          style={{
+            inputIOS: styles.inputDropDown,
+            inputAndroid: styles.inputDropDown,
+          }}
+          value={group.cycle}
         />
       </View>
 
       <View style={styles.field}>
-        <Text style={styles.label}>Start Date</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="YYYY-MM-DD"
-          value={group.startDate}
-          onChangeText={(text) => setGroup({ ...group, startDate: text })}
+        <Text style={styles.label}>Type</Text>
+        <RNPickerSelect
+          onValueChange={(value) => setGroup({ ...group, type: value })}
+          placeholder={{ label: "Select type", value: null }}
+          items={[
+            { label: "Fixed", value: "daily_savings" },
+            { label: "Rotating", value: "group_contribution" },
+          ]}
+          style={{
+            inputIOS: styles.inputDropDown,
+            inputAndroid: styles.inputDropDown,
+          }}
+          value={group.type}
         />
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Number of Members</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={group.members}
-          onChangeText={(text) => setGroup({ ...group, members: text })}
-        />
-      </View>
-
-      <View style={styles.field}>
-        <TouchableOpacity onPress={pickImage}>
-          <Text style={styles.uploadBtn}>Upload Group Image (optional)</Text>
-        </TouchableOpacity>
-        {group.image && (
-          <Image
-            source={{ uri: group.image }}
-            style={{ width: 100, height: 100, marginTop: 10, borderRadius: 10 }}
-          />
-        )}
       </View>
 
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>

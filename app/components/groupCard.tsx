@@ -4,12 +4,23 @@ import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome5, Feather } from "@expo/vector-icons";
 
 const GroupCard = ({ group }) => {
+  console.log("card", group);
+
+  const numberOfMembers =
+    group.yet_to_collect_members.length +
+    group.already_collected_members.length;
+
+  console.log("members", numberOfMembers);
+
+  const goal = group.amount * numberOfMembers;
+  console.log("goal", goal);
+
   const percentage = ((group.saved / group.goal) * 100).toFixed(1);
 
   return (
     <View style={styles.groupCard}>
       <View style={styles.cardHeader}>
-        <Text style={styles.groupTitle}>{group.title}</Text>
+        <Text style={styles.groupTitle}>{group.name}</Text>
         <View style={styles.statusBadge}>
           <Text style={styles.statusText}>{group.status}</Text>
         </View>
@@ -18,24 +29,33 @@ const GroupCard = ({ group }) => {
       <Text style={styles.groupDescription}>{group.description}</Text>
 
       <View style={styles.progressRow}>
-        <Text style={styles.amountText}>${group.saved.toLocaleString()}</Text>
-        <Text style={styles.amountText}>${group.goal.toLocaleString()}</Text>
+        {/* <Text style={styles.amountText}>₦{group..toLocaleString()}</Text> */}
+        <Text style={styles.amountText}>₦ {goal.toLocaleString()}</Text>
+        {}
       </View>
 
       <View style={styles.progressBar}>
-        <LinearGradient
-          colors={["#3b82f6", "#8b5cf6"]}
-          style={[styles.progressFill, { width: `${percentage}%` }]}
+        <View
+          style={[
+            styles.progressFill,
+            { width: `${percentage}%`, backgroundColor: "#0f766e" },
+          ]}
         />
       </View>
       <Text style={styles.percentText}>{percentage}% completed</Text>
 
       <View style={styles.detailsRow}>
         <Text style={styles.infoText}>
-          <FontAwesome5 name="user-friends" size={14} /> {group.members} members
+          <FontAwesome5 name="user-friends" size={14} /> {numberOfMembers}{" "}
+          members
         </Text>
         <Text style={styles.infoText}>
-          <Feather name="calendar" size={14} /> {group.dueDate}
+          <Feather name="calendar" size={14} />{" "}
+          {new Date(group.collection_deadline).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
         </Text>
       </View>
     </View>

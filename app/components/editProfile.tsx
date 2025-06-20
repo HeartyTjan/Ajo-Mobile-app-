@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
@@ -16,6 +17,10 @@ import { useRouter, Stack } from "expo-router";
 import { getFromStorage, saveToStorage } from "../components/storage";
 import styles from "../styles/editProfile.styles";
 
+const API_BASE =
+  Platform.OS === "web"
+    ? "http://localhost:8080"
+    : "http://192.168.238.110:8080";
 export default function EditProfileScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState({
@@ -37,7 +42,8 @@ export default function EditProfileScreen() {
       try {
         const user = await getFromStorage("user");
         const userProfile = await getFromStorage("user_profile");
-        const jwt = await getFromStorage("jwt");
+        const jwt = await getFromStorage("token");
+        console.log("@Edit profilr", jwt);
 
         setToken(jwt);
         setUserId(user?._id);
@@ -84,6 +90,9 @@ export default function EditProfileScreen() {
       if (!result.canceled && result.assets?.length > 0) {
         const uri = result.assets[0].uri;
         setProfile((prev) => ({ ...prev, profile_pic: uri }));
+        // await saveToStorage("user_profile", { ...profile, profile_pic: uri });
+        await saveToStorage("user_profile", profile);
+
         Alert.alert("Success", "Profile picture selected");
       }
     } catch (error) {
@@ -97,7 +106,7 @@ export default function EditProfileScreen() {
     setIsLoading(true);
     try {
       const { data } = await axios.put(
-        `http://localhost:8080/profile/${userId}`,
+        `${API_BASE}/profile/${userId}`,
         {
           bio: profile.bio,
           location: profile.location,

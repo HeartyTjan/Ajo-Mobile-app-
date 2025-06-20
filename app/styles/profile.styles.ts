@@ -8,6 +8,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 30,
+    backgroundColor: "#0f766e",
   },
   avatar: {
     backgroundColor: "#a78bfa",

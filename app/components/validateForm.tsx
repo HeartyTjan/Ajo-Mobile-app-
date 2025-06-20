@@ -3,6 +3,7 @@ type FormErrors = {
   email?: string;
   password?: string;
   phone?: string;
+  bvn?: string;
   confirmPassword?: string;
 };
 export default function validateForm(userInfo: any) {
@@ -23,6 +24,12 @@ export default function validateForm(userInfo: any) {
     errors.phone = "Phone number is required";
   } else if (userInfo.phone.length !== 11) {
     errors.phone = "Phone number must be 11 digits";
+  }
+
+  if (!userInfo.bvn) {
+    errors.bvn = "BVN is required";
+  } else if (userInfo.bvn.length !== 11) {
+    errors.bvn = "BVN must be 11 digits";
   }
   if (!userInfo.password) {
     errors.password = "Password is required";
